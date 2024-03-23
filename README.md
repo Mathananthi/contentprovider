@@ -31,108 +31,124 @@ Step 7: Save and run the application.
 /*
 Program to print the contact name and phone number using content providers.
 Developed by:Mathan M
-Registeration Number : 212221040102
+Registeration Number :212221040102
 */
 ```
-## ACTIVITY_MAIN.XML
+#MainAcitivity.java
+```
+package com.example.contactdetails;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import android.content.ContentResolver;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.util.Log;
+import android.view.View;
+import android.Manifest;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int PERMISSION_REQUEST_READ_CONTACTS = 1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+    }
+
+    public void btnGetContactPressed(View v) {
+        getPhoneContacts();
+    }
+
+    private void getPhoneContacts() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, PERMISSION_REQUEST_READ_CONTACTS);
+        } else {
+            fetchContacts();
+        }
+    }
+
+    private void fetchContacts() {
+        ContentResolver contentResolver = getContentResolver();
+        Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+        Cursor cursor = contentResolver.query(uri, null, null, null, null);
+        if (cursor != null) {
+            Log.i("CONTACT_PROVIDER_DEMO", "TOTAL # of Contacts ::: " + cursor.getCount());
+            int displayNameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+            int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+            while (cursor.moveToNext()) {
+                String contactName = cursor.getString(displayNameIndex);
+                String contactNumber = cursor.getString(numberIndex);
+                Log.i("CONTACT_PROVIDER_DEMO", "Contact Name  ::: " + contactName + " Ph #  ::: " + contactNumber);
+            }
+            cursor.close();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_READ_CONTACTS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                fetchContacts();
+            } else {
+                Log.e("CONTACT_PROVIDER_DEMO", "Permission denied");
+            }
+        }
+    }
+}
+```
+#activity_main.xml
 ```
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="72dp"
+        android:text="Content Provider"
+        android:textSize="34sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.559"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <Button
         android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/button"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="50dp"/>
+        android:layout_marginBottom="368dp"
+        android:text="Get Contacts"
+        android:onClick="btnGetContactPressed"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text" />
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:layout_below="@id/button"
-        android:layout_marginTop="20dp"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"/>
-</RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
 ```
-## MAINACTIVITY.JAVA
-```
-package com.example.contentprovider;
-import android.database.Cursor;
-import android.os.Bundle;
-import android.provider.ContactsContract;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
-
-public class MainActivity extends AppCompatActivity {
-
-    private TextView textViewContacts;
-    int count=0;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        Button buttonLoadContacts = findViewById(R.id.button);
-        textViewContacts = findViewById(R.id.textView);
-
-        buttonLoadContacts.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loadContacts();
-            }
-        });
-    }
-
-    private void loadContacts() {
-        StringBuilder stringBuilder = new StringBuilder();
-
-        Cursor cursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                null, null, null, null);
-
-        if (cursor != null && cursor.getCount() > 0) {
-            int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY);
-            int phoneIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-
-            while (cursor.moveToNext()) {
-                String name = nameIndex != -1 ? cursor.getString(nameIndex) : "No Name";
-                String phoneNumber = phoneIndex != -1 ? cursor.getString(phoneIndex) : "No Phone Number";
-
-                stringBuilder.append("Name: ").append(name).append("\n").append("Phone: ").append(phoneNumber).append("\n\n");
-                count = count+1;
-            }
-            cursor.close();
-            textViewContacts.setText(stringBuilder.toString());
-            Log.i("Content Provider Demo",stringBuilder.toString());
-        } else {
-            Toast.makeText(this, "No contacts found", Toast.LENGTH_SHORT).show();
-        }
-
-        System.out.println("Total Count of Contacts: "+count);
-    }
-
-}
-```
-## ANDROIDMANIFEST.XML
+#AndroidManifest.xml
 ```
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <uses-permission android:name="android.permission.WRITE_CONTACTS"/>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -141,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Contentprovider"
+        android:theme="@style/Theme.ContactDetails"
         tools:targetApi="31">
         <activity
             android:name=".MainActivity"
@@ -158,11 +174,7 @@ public class MainActivity extends AppCompatActivity {
 ```
 
 ## OUTPUT
-
-![image](https://github.com/yuvaraj-csk/contentprovider/assets/134052574/90c03e96-4353-42dc-a7ed-ac1c73f8fff9)
-![listofcontact](https://github.com/yuvaraj-csk/contentprovider/assets/134052574/de21b66c-b501-47f8-8e0e-39df2ff66711)
-![getcontact](https://github.com/yuvaraj-csk/contentprovider/assets/134052574/b2333ebe-c90c-4f12-bc80-f0c65628c14a)
-
+![WhatsApp Image 2024-03-14 at 08 57 03_47eec2e4](https://github.com/Khabir-Ahmed786/contentprovider/assets/143950752/5815a725-4504-4d30-b410-a883f917e946)
 
 
 
